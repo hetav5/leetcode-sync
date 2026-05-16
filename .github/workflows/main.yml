@@ -1,8 +1,11 @@
 name: LeetCode to Notion Sync
 
 on:
+  # Run daily at 7:30 PM IST (14:00 UTC) — adjust the cron time to your timezone
   schedule:
     - cron: '0 14 * * *'
+  
+  # Allow manual trigger from GitHub UI (useful for testing)
   workflow_dispatch:
 
 jobs:
@@ -34,18 +37,18 @@ jobs:
           LEETCODE_USERNAME: ${{ secrets.LEETCODE_USERNAME }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-          SOLVED_BY: Me
+          SOLVED_BY: ${{ secrets.SOLVED_BY_ME }}
         run: python leetcode_to_notion.py
 
-      # - name: Sync — Friend
-      #   env:
-      #     LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION_FRIEND }}
-      #     LEETCODE_CSRF: ${{ secrets.LEETCODE_CSRF_FRIEND }}
-      #     LEETCODE_USERNAME: ${{ secrets.LEETCODE_USERNAME_FRIEND }}
-      #     NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-      #     NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-      #     SOLVED_BY: Friend
-      #   run: python leetcode_to_notion.py
+      - name: Sync — Friend
+        env:
+          LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION_FRIEND }}
+          LEETCODE_CSRF: ${{ secrets.LEETCODE_CSRF_FRIEND }}
+          LEETCODE_USERNAME: ${{ secrets.LEETCODE_USERNAME_FRIEND }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          SOLVED_BY: ${{ secrets.SOLVED_BY_FRIEND }}
+        run: python leetcode_to_notion.py
 
       - name: Notify on failure (optional)
         if: failure()
