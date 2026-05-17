@@ -45,18 +45,6 @@
       margin-bottom: 1.5rem;
     }
 
-    .tag {
-      font-size: 0.62rem;
-      letter-spacing: 0.2em;
-      color: #3fb950;
-      background: rgba(63, 185, 80, 0.1);
-      border: 1px solid rgba(63, 185, 80, 0.25);
-      border-radius: 4px;
-      padding: 2px 8px;
-      text-transform: uppercase;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-    }
-
     .refresh-btn {
       background: none;
       border: 1px solid #30363d;
@@ -143,20 +131,12 @@
       transition: width 1s linear;
     }
 
-    .timer-label {
-      font-size: 0.68rem;
-      color: #484f58;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      min-width: 4ch;
-      text-align: right;
-    }
   </style>
 </head>
 <body>
   <div class="widget">
     <div class="widget::before"></div>
     <div class="header">
-      <span class="tag">Placement Motivation</span>
       <button class="refresh-btn" id="refreshBtn">↻ New</button>
     </div>
 
@@ -170,7 +150,6 @@
       <div class="progress-track">
         <div class="progress-bar" id="progressBar" style="width: 100%"></div>
       </div>
-      <span class="timer-label" id="timerLabel">5:00</span>
     </div>
   </div>
 
@@ -244,9 +223,6 @@
     function updateProgress() {
       const pct = (countdown / (INTERVAL_MS / 1000)) * 100;
       document.getElementById('progressBar').style.width = pct + '%';
-      const m = Math.floor(countdown / 60);
-      const s = String(Math.floor(countdown % 60)).padStart(2, '0');
-      document.getElementById('timerLabel').textContent = `${m}:${s}`;
     }
 
     function startCycle() {

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gallery</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .widget {
+      width: 100%;
+      max-width: 480px;
+      border: 1px solid #21262d;
+      border-radius: 16px;
+      background: #161b22;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+      margin: 1rem;
+    }
+
+    .widget::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #3fb950, #58a6ff, transparent);
+      z-index: 10;
+    }
+
+    /* ── Slideshow stage ── */
+    .stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #0d1117;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.7s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide.active {
+      opacity: 1;
+    }
+
+    .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Placeholder shown when no images are loaded */
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      color: #30363d;
+    }
+
+    .placeholder-icon {
+      font-size: 3rem;
+      opacity: 0.4;
+    }
+
+    .placeholder-text {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      color: #484f58;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    /* ── Nav arrows ── */
+    .arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(13, 17, 23, 0.7);
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.15s;
+      z-index: 5;
+      backdrop-filter: blur(4px);
+    }
+
+    .arrow:hover {
+      background: rgba(88, 166, 255, 0.15);
+      border-color: #58a6ff;
+      color: #58a6ff;
+    }
+
+    .arrow-left  { left: 10px; }
+    .arrow-right { right: 10px; }
+
+    /* ── Caption ── */
+    .caption {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(13, 17, 23, 0.85));
+      padding: 1.5rem 1rem 0.6rem;
+      font-size: 0.82rem;
+      color: #e6edf3;
+      text-align: center;
+      min-height: 2.4rem;
+      transition: opacity 0.4s;
+    }
+
+    /* ── Footer: dots + counter ── */
+    .footer {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #30363d;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .dot.active {
+      background: #58a6ff;
+      transform: scale(1.3);
+    }
+
+    .counter {
+      font-size: 0.7rem;
+      color: #484f58;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Progress bar ── */
+    .progress-track {
+      height: 2px;
+      background: #21262d;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3fb950, #58a6ff);
+      transition: width 0.1s linear;
+    }
+  </style>
+</head>
+<body>
+  <div class="widget">
+    <div class="stage" id="stage">
+      <!-- Slides are injected here by JS -->
+    </div>
+    <div class="progress-track">
+      <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+    <div class="footer">
+      <div class="dots" id="dots"></div>
+      <span class="counter" id="counter"></span>
+    </div>
+  </div>
+
+  <script>
+    /* ─────────────────────────────────────────────────
+       ADD YOUR IMAGES HERE
+       Each entry: { src: 'URL or relative path', caption: 'text' }
+       Caption is optional — set it to '' to hide it.
+    ───────────────────────────────────────────────── */
+    const IMAGES = [
+      // { src: 'https://your-image-url.jpg', caption: 'Your caption here' },
+      // { src: 'photo2.jpg', caption: '' },
+    ];
+
+    /* How long each slide stays (milliseconds) */
+    const SLIDE_DURATION = 5000;
+
+    /* ── State ── */
+    let current  = 0;
+    let total    = IMAGES.length;
+    let timer    = null;
+    let progress = 0;
+    let tickId   = null;
+
+    const stage = document.getElementById('stage');
+
+    /* ── Build slides or show placeholder ── */
+    function build() {
+      stage.innerHTML = '';
+
+      if (total === 0) {
+        stage.innerHTML = `
+          <div class="placeholder">
+            <div class="placeholder-icon">🖼</div>
+            <div class="placeholder-text">Add images to IMAGES array in gallery.html</div>
+          </div>`;
+        document.getElementById('dots').innerHTML    = '';
+        document.getElementById('counter').textContent = '';
+        return;
+      }
+
+      IMAGES.forEach((img, i) => {
+        const slide = document.createElement('div');
+        slide.className = 'slide' + (i === 0 ? ' active' : '');
+        slide.innerHTML = `<img src="${img.src}" alt="${img.caption || ''}" loading="lazy" />
+          ${img.caption ? `<div class="caption">${img.caption}</div>` : ''}`;
+        stage.appendChild(slide);
+      });
+
+      /* Arrows */
+      const left = document.createElement('button');
+      left.className = 'arrow arrow-left';
+      left.innerHTML = '&#8249;';
+      left.addEventListener('click', () => jump(current - 1));
+
+      const right = document.createElement('button');
+      right.className = 'arrow arrow-right';
+      right.innerHTML = '&#8250;';
+      right.addEventListener('click', () => jump(current + 1));
+
+      stage.appendChild(left);
+      stage.appendChild(right);
+
+      /* Dots */
+      const dotsEl = document.getElementById('dots');
+      dotsEl.innerHTML = '';
+      IMAGES.forEach((_, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.addEventListener('click', () => jump(i));
+        dotsEl.appendChild(dot);
+      });
+
+      updateCounter();
+    }
+
+    function updateCounter() {
+      if (total === 0) return;
+      document.getElementById('counter').textContent =
+        String(current + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+    }
+
+    function goTo(index) {
+      const slides = stage.querySelectorAll('.slide');
+      const dots   = document.querySelectorAll('.dot');
+
+      slides[current]?.classList.remove('active');
+      dots[current]?.classList.remove('active');
+
+      current = ((index % total) + total) % total;
+
+      slides[current]?.classList.add('active');
+      dots[current]?.classList.add('active');
+      updateCounter();
+    }
+
+    function jump(index) {
+      resetTimer();
+      goTo(index);
+    }
+
+    /* ── Auto-advance with progress bar ── */
+    function resetTimer() {
+      clearInterval(timer);
+      clearInterval(tickId);
+      progress = 0;
+      document.getElementById('progressBar').style.width = '0%';
+      if (total === 0) return;
+      startTimer();
+    }
+
+    function startTimer() {
+      const TICK = 100;
+      tickId = setInterval(() => {
+        progress += TICK;
+        const pct = Math.min((progress / SLIDE_DURATION) * 100, 100);
+        document.getElementById('progressBar').style.width = pct + '%';
+        if (progress >= SLIDE_DURATION) {
+          progress = 0;
+          goTo(current + 1);
+          document.getElementById('progressBar').style.width = '0%';
+        }
+      }, TICK);
+    }
+
+    /* ── Boot ── */
+    build();
+    if (total > 0) resetTimer();
+  </script>
+</body>
+</html>
