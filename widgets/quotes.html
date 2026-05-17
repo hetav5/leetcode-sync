@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quotes</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .widget {
+      width: 100%;
+      max-width: 520px;
+      padding: 2rem 2.25rem 1.5rem;
+      border: 1px solid #21262d;
+      border-radius: 16px;
+      background: #161b22;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+      margin: 1rem;
+    }
+
+    .widget::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #58a6ff, #3fb950, transparent);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .tag {
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      color: #3fb950;
+      background: rgba(63, 185, 80, 0.1);
+      border: 1px solid rgba(63, 185, 80, 0.25);
+      border-radius: 4px;
+      padding: 2px 8px;
+      text-transform: uppercase;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .refresh-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #8b949e;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .refresh-btn:hover {
+      border-color: #58a6ff;
+      color: #58a6ff;
+      background: rgba(88, 166, 255, 0.05);
+    }
+
+    .quote-wrap {
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .quote-wrap.fade-out {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    .quote-mark {
+      font-size: 3rem;
+      color: #3fb950;
+      line-height: 0.5;
+      margin-bottom: 0.75rem;
+      font-family: Georgia, serif;
+      opacity: 0.7;
+    }
+
+    .quote-text {
+      font-size: 1.05rem;
+      line-height: 1.65;
+      color: #e6edf3;
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .quote-author {
+      margin-top: 1.1rem;
+      font-size: 0.82rem;
+      color: #58a6ff;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-style: normal;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .quote-author::before {
+      content: '— ';
+      color: #484f58;
+    }
+
+    .footer {
+      margin-top: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 3px;
+      background: #21262d;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3fb950, #58a6ff);
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
+
+    .timer-label {
+      font-size: 0.68rem;
+      color: #484f58;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      min-width: 4ch;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="widget">
+    <div class="widget::before"></div>
+    <div class="header">
+      <span class="tag">Placement Motivation</span>
+      <button class="refresh-btn" id="refreshBtn">↻ New</button>
+    </div>
+
+    <div class="quote-wrap" id="quoteWrap">
+      <div class="quote-mark">"</div>
+      <p class="quote-text" id="quoteText">Loading inspiration...</p>
+      <p class="quote-author" id="quoteAuthor"></p>
+    </div>
+
+    <div class="footer">
+      <div class="progress-track">
+        <div class="progress-bar" id="progressBar" style="width: 100%"></div>
+      </div>
+      <span class="timer-label" id="timerLabel">5:00</span>
+    </div>
+  </div>
+
+  <script>
+    const INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+    /* Placement-focused fallback quotes */
+    const FALLBACK = [
+      { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+      { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+      { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+      { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim Notke" },
+      { text: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+      { text: "The expert in anything was once a beginner.", author: "Helen Hayes" },
+      { text: "Code is like humor. When you have to explain it, it's bad.", author: "Cory House" },
+      { text: "First, solve the problem. Then, write the code.", author: "John Johnson" },
+      { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+      { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+      { text: "Every master was once a disaster.", author: "T. Harv Eker" },
+      { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+      { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+      { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
+      { text: "Obstacles are those frightful things you see when you take your eyes off your goal.", author: "Henry Ford" },
+      { text: "Your limitation — it's only your imagination.", author: "Unknown" },
+      { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
+      { text: "Great things never come from comfort zones.", author: "Unknown" },
+      { text: "Dream it. Wish it. Do it.", author: "Unknown" },
+      { text: "Consistency is the key to unlocking your true potential.", author: "Unknown" },
+      { text: "The pain you feel today will be the strength you feel tomorrow.", author: "Unknown" },
+      { text: "One interview can change your life. Prepare like it matters.", author: "Unknown" },
+      { text: "Every problem solved in practice is one less to fear in the interview room.", author: "Unknown" },
+      { text: "Your future employer is looking for someone who never gives up. Be that person.", author: "Unknown" },
+      { text: "Data structures and algorithms are just puzzles. Solve enough and they stop being scary.", author: "Unknown" },
+    ];
+
+    let fallbackIndex = Math.floor(Math.random() * FALLBACK.length);
+    let countdown = INTERVAL_MS / 1000; // seconds
+    let intervalId = null;
+    let tickId = null;
+
+    async function fetchQuote() {
+      try {
+        const res = await fetch('https://dummyjson.com/quotes/random', { cache: 'no-store' });
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        return { text: data.quote, author: data.author };
+      } catch {
+        const q = FALLBACK[fallbackIndex % FALLBACK.length];
+        fallbackIndex++;
+        return q;
+      }
+    }
+
+    async function showNewQuote() {
+      const wrap = document.getElementById('quoteWrap');
+
+      wrap.classList.add('fade-out');
+      await new Promise(r => setTimeout(r, 600));
+
+      const q = await fetchQuote();
+      document.getElementById('quoteText').textContent   = q.text;
+      document.getElementById('quoteAuthor').textContent = q.author;
+
+      wrap.classList.remove('fade-out');
+
+      // reset countdown & progress
+      countdown = INTERVAL_MS / 1000;
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const pct = (countdown / (INTERVAL_MS / 1000)) * 100;
+      document.getElementById('progressBar').style.width = pct + '%';
+      const m = Math.floor(countdown / 60);
+      const s = String(Math.floor(countdown % 60)).padStart(2, '0');
+      document.getElementById('timerLabel').textContent = `${m}:${s}`;
+    }
+
+    function startCycle() {
+      clearInterval(intervalId);
+      clearInterval(tickId);
+
+      // Refresh quote every 5 minutes
+      intervalId = setInterval(showNewQuote, INTERVAL_MS);
+
+      // Tick every second for progress bar
+      tickId = setInterval(() => {
+        countdown = Math.max(0, countdown - 1);
+        updateProgress();
+      }, 1000);
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      clearInterval(intervalId);
+      clearInterval(tickId);
+      showNewQuote();
+      startCycle();
+    });
+
+    // Boot
+    showNewQuote();
+    startCycle();
+  </script>
+</body>
+</html>
