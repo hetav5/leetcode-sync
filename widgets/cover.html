@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cover</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Stage fills the entire frame ── */
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #0d1117;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    .slide.active { opacity: 1; }
+
+    .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Subtle dark gradient overlay so any text on top stays readable */
+    .stage::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(13,17,23,0.15) 0%, rgba(13,17,23,0.45) 100%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* ── Prev / Next arrows ── */
+    .arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 5;
+      background: rgba(13, 17, 23, 0.55);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      border-radius: 50%;
+      color: #e6edf3;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      backdrop-filter: blur(6px);
+      transition: all 0.2s;
+      opacity: 0;
+    }
+
+    .stage:hover .arrow { opacity: 1; }
+
+    .arrow:hover {
+      background: rgba(167, 139, 250, 0.2);
+      border-color: #f97316;
+      color: #f97316;
+    }
+
+    .arrow-left  { left: 14px; }
+    .arrow-right { right: 14px; }
+
+    /* ── Dot indicators ── */
+    .dots {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 7px;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .stage:hover .dots { opacity: 1; }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(230, 237, 243, 0.35);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .dot.active {
+      background: #f97316;
+      transform: scale(1.35);
+    }
+
+    /* ── Progress bar (very subtle, at bottom) ── */
+    .progress-track {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: transparent;
+      z-index: 6;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b, #f97316);
+      transition: width 0.1s linear;
+    }
+
+    /* ── Placeholder ── */
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.9rem;
+    }
+
+    .ph-icon  { font-size: 3.5rem; opacity: 0.25; }
+    .ph-text  {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      color: #484f58;
+      letter-spacing: 0.1em;
+      text-align: center;
+      padding: 0 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <!-- slides injected by JS -->
+    <div class="progress-track">
+      <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <script>
+    /* ─────────────────────────────────────────────────
+       ADD YOUR IMAGES HERE
+       { src: 'URL or path', caption: 'optional text' }
+    ───────────────────────────────────────────────── */
+    const IMAGES = [
+      // { src: 'https://your-image-url.jpg', caption: '' },
+    ];
+
+    const SLIDE_DURATION = 6000; // ms per slide
+
+    let current  = 0;
+    let total    = IMAGES.length;
+    let progress = 0;
+    let tickId   = null;
+
+    const stage = document.getElementById('stage');
+
+    function build() {
+      if (total === 0) {
+        stage.insertAdjacentHTML('afterbegin', `
+          <div class="placeholder">
+            <div class="ph-icon">🖼</div>
+            <div class="ph-text">Add image URLs to the IMAGES array in cover.html</div>
+          </div>`);
+        return;
+      }
+
+      IMAGES.forEach((img, i) => {
+        const slide = document.createElement('div');
+        slide.className = 'slide' + (i === 0 ? ' active' : '');
+        slide.innerHTML = `<img src="${img.src}" alt="${img.caption || ''}" />`;
+        stage.insertBefore(slide, stage.querySelector('.progress-track'));
+      });
+
+      /* Arrows */
+      ['left','right'].forEach(dir => {
+        const btn = document.createElement('button');
+        btn.className = `arrow arrow-${dir}`;
+        btn.innerHTML = dir === 'left' ? '&#8249;' : '&#8250;';
+        btn.addEventListener('click', () => jump(current + (dir === 'left' ? -1 : 1)));
+        stage.insertBefore(btn, stage.querySelector('.progress-track'));
+      });
+
+      /* Dots */
+      const dotsEl = document.getElementById('dots');
+      IMAGES.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = 'dot' + (i === 0 ? ' active' : '');
+        d.addEventListener('click', () => jump(i));
+        dotsEl.appendChild(d);
+      });
+
+      startTimer();
+    }
+
+    function goTo(index) {
+      stage.querySelectorAll('.slide')[current]?.classList.remove('active');
+      document.querySelectorAll('.dot')[current]?.classList.remove('active');
+      current = ((index % total) + total) % total;
+      stage.querySelectorAll('.slide')[current]?.classList.add('active');
+      document.querySelectorAll('.dot')[current]?.classList.add('active');
+    }
+
+    function jump(index) {
+      clearInterval(tickId);
+      progress = 0;
+      document.getElementById('progressBar').style.width = '0%';
+      goTo(index);
+      startTimer();
+    }
+
+    function startTimer() {
+      const TICK = 100;
+      tickId = setInterval(() => {
+        progress += TICK;
+        document.getElementById('progressBar').style.width =
+          Math.min((progress / SLIDE_DURATION) * 100, 100) + '%';
+        if (progress >= SLIDE_DURATION) {
+          progress = 0;
+          goTo(current + 1);
+          document.getElementById('progressBar').style.width = '0%';
+        }
+      }, TICK);
+    }
+
+    build();
+  </script>
+</body>
+</html>
