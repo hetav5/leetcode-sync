@@ -40,15 +40,15 @@ jobs:
           SOLVED_BY: ${{ secrets.SOLVED_BY_ME }}
         run: python leetcode_to_notion.py
 
-      - name: Sync — Friend
-        env:
-          LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION_FRIEND }}
-          LEETCODE_CSRF: ${{ secrets.LEETCODE_CSRF_FRIEND }}
-          LEETCODE_USERNAME: ${{ secrets.LEETCODE_USERNAME_FRIEND }}
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-          SOLVED_BY: ${{ secrets.SOLVED_BY_FRIEND }}
-        run: python leetcode_to_notion.py
+      # - name: Sync — Friend
+      #   env:
+      #     LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION_FRIEND }}
+      #     LEETCODE_CSRF: ${{ secrets.LEETCODE_CSRF_FRIEND }}
+      #     LEETCODE_USERNAME: ${{ secrets.LEETCODE_USERNAME_FRIEND }}
+      #     NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      #     NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+      #     SOLVED_BY: ${{ secrets.SOLVED_BY_FRIEND }}
+      #   run: python leetcode_to_notion.py
 
       - name: Notify on failure (optional)
         if: failure()
