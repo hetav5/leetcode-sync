@@ -8,7 +8,7 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #080810;
+      background: transparent;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -20,22 +20,10 @@
     .widget {
       width: 100%;
       max-width: 480px;
-      border: 1px solid #21262d;
-      border-radius: 16px;
-      background: #0e0f1c;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      position: relative;
+      border-radius: 12px;
+      background: transparent;
       overflow: hidden;
       margin: 1rem;
-    }
-
-    .widget::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #f59e0b, #f97316, transparent);
-      z-index: 10;
     }
 
     /* ── Slideshow stage ── */
@@ -43,7 +31,7 @@
       position: relative;
       width: 100%;
       aspect-ratio: 16 / 9;
-      background: #080810;
+      background: transparent;
       overflow: hidden;
     }
 
@@ -173,7 +161,7 @@
     /* ── Progress bar ── */
     .progress-track {
       height: 2px;
-      background: #21262d;
+      background: rgba(255,255,255,0.08);
       overflow: hidden;
     }
 
